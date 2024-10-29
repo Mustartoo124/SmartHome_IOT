@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "author": "biet khong",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": -38.4, "left": -62.36, "attrs": {} },
+    { "type": "board-esp32-devkit-c-v4", "id": "esp1", "top": -67.2, "left": 91.24, "attrs": {} }
+  ],
+  "connections": [ [ "esp:TX", "$serialMonitor:RX", "", [] ], [ "esp:RX", "$serialMonitor:TX", "", [] ] ],
+  "dependencies": {}
+}
