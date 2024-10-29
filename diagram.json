@@ -3,9 +3,47 @@
   "author": "biet khong",
   "editor": "wokwi",
   "parts": [
-    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": -38.4, "left": -62.36, "attrs": {} },
-    { "type": "board-esp32-devkit-c-v4", "id": "esp1", "top": -67.2, "left": 91.24, "attrs": {} }
+    { "type": "wokwi-breadboard", "id": "bb1", "top": -22.2, "left": -410, "attrs": {} },
+    { "type": "wokwi-breadboard", "id": "bb2", "top": 237, "left": -410, "attrs": {} },
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": -38.4, "left": 523.24, "attrs": {} },
+    { "type": "board-esp32-devkit-c-v4", "id": "esp1", "top": -28.8, "left": 350.44, "attrs": {} },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": 73.2,
+      "left": -668.2,
+      "attrs": { "color": "red" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 169.4,
+      "left": -700.8,
+      "attrs": { "color": "green" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 44.36276757959347,
+      "left": -759.612798236461,
+      "attrs": { "value": "1000" }
+    },
+    { "type": "wokwi-rgb-led", "id": "rgb1", "top": 13.6, "left": -334.9, "attrs": {} },
+    {
+      "type": "wokwi-led-bar-graph",
+      "id": "bargraph1",
+      "top": 14.4,
+      "left": -513.6,
+      "attrs": { "color": "lime" }
+    }
   ],
-  "connections": [ [ "esp:TX", "$serialMonitor:RX", "", [] ], [ "esp:RX", "$serialMonitor:TX", "", [] ] ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "rgb1:R", "bb1:7t.d", "", [ "$bb" ] ],
+    [ "rgb1:COM", "bb1:8t.e", "", [ "$bb" ] ],
+    [ "rgb1:G", "bb1:9t.d", "", [ "$bb" ] ],
+    [ "rgb1:B", "bb1:10t.d", "", [ "$bb" ] ]
+  ],
   "dependencies": {}
 }
