@@ -1,4 +1,14 @@
-#include "setup.h" 
+#include "Button/button.h"
+#include "DHT22/dht22.h"
+#include "DS1307 RTC/rtc.h"
+#include "LED/led.h"
+#include "Photoresistor Sensor/photo.h"
+#include "Buzzer/buzzer.h"
+#include "OLED ssd1306/oled.h"
+#include "PIR Motion Sensor/pir.h"  
+#include "Relay/relay.h"  
+#include "Servo/servo.h"
+#include "Slide Potentionmeter/slide.h"
 
 void rgbController() {
   Serial.println("Red");
@@ -16,11 +26,6 @@ void displayController() {
   display.setTextAlignment(TEXT_ALIGN_LEFT);
   display.drawString(0, 0, "Hello World");
   display.display();
-}
-
-void rtcController() {
-  Serial.println(rtc.getTime());
-  delay(1000);
 }
 
 void potentiometerController() {
@@ -42,11 +47,7 @@ void dhtController() {
   delay(2000);
 } 
 
-void pirController() {
-  int value = digitalRead(pirPin);
-  Serial.println(value); 
-  delay(100);
-}
+
 
 void photoController() {
   Serial.println(analogRead(photoPin));
@@ -62,13 +63,6 @@ void servoController() {
   delay(1000); 
   myServo.write(0); 
   delay(1000); 
-} 
-
-void relayController() {
-  digitalWrite(relayPin, HIGH);
-  delay(1000); 
-  digitalWrite(relayPin, LOW); 
-  delay(500);
 } 
 
 void buzzerController() {
@@ -104,9 +98,8 @@ void setup() {
   pinMode(buttonPin, INPUT);
   pinMode(photoPin, INPUT); 
   dht.setup(dhtPin, DHTesp::DHT22); 
-  rtc.setTime(30, 24, 15, 17, 1, 2021);  // 17th Jan 2021 15:24:30
 }
 
 void loop() {
-  relayController();
+
 }
