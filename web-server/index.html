@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Home Control Screen</title>
+    <link rel="stylesheet" href="style.css" />
+    <style></style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="control-panel">
+        <div class="control-block first-block">
+          <div class="header">
+            <h1 class="time" id="time">--:--:--</h1>
+            <p class="date" id="date">--/--/----</p>
+          </div>
+          <div class="sync">
+          <button>Sync with Device</button>
+          <h2 class="weather-description" id="weatherDesc">Cloudy</h2>
+        </div>
+        </div>
+
+        <div class="control-block second-block">
+          <div class="temperature-humidity">
+            <div class="icon-and-info">
+              <div class="icon temperature-icon"></div>
+              <div>
+                <span class="room-info"
+                  ><span id="temperature">26</span>°C</span
+                >
+              </div>
+            </div>
+            <div class="icon-and-info">
+              <div class="icon humidity-icon"></div>
+              <div>
+                <span class="room-info"><span id="humidity">65</span>%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="light-control">
+            <div class="icon-and-info">
+              <div class="icon"></div>
+              <div>
+                <span class="light-title">Light</span>
+                <span class="room-info"
+                  ><span id="lightStatus">on</span>&nbsp;&nbsp;&nbsp;</span
+                >
+              </div>
+            </div>
+            <div class="brightness-control">
+              <div id="brightness-level">100%</div>
+              <div class="slider-container" id="brightness-slider">
+                <div class="slider-fill"></div>
+              </div>
+            </div>
+          </div>
+
+          <input
+            type="range"
+            id="brightness-slider"
+            min="0"
+            max="100"
+            value="60"
+            style="display: none"
+          />
+          <div class="door-lock-control">
+            <div class="icon-and-info">
+              <div class="icon door-icon"></div>
+              <div>
+                <span class="light-title">Gas</span>
+                <span class="room-info"
+                  ><span id="doorLockStatus">unlocked</span></span
+                >
+              </div>
+            </div>
+            <div id="state">&nbsp;&nbsp;&nbsp;</div>
+            <button class="toggle-button" id="doorLock">Locked</button>
+          </div>
+        </div>
+      </div>
+      <!-- Right Side: Notifications -->
+      <div class="notifications-panel">
+        <h2>Notifications
+          <input type="date" id="date-picker" class="date-picker" value="2024-11-04" /></h2>
+        <div class="notifications-content">
+          <ul id="notifications">
+            <li class="notification-item">
+              Camera detected movement at front door.
+              <span class="notification-time">10:09 AM</span>
+            </li>
+            <li class="notification-item">
+              Temperature adjusted to 24°C.
+              <span class="notification-time">10:12 AM</span>
+            </li>
+            <li class="notification-item">
+              Lights turned off in the living room.
+              <span class="notification-time">10:15 AM</span>
+            </li>
+            <li class="notification-item">
+              Camera detected movement at front door.
+              <span class="notification-time">10:09 AM</span>
+            </li>
+            <li class="notification-item">
+              Temperature adjusted to 24°C.
+              <span class="notification-time">10:12 AM</span>
+            </li>
+            <li class="notification-item">
+              Lights turned off in the living room.
+              <span class="notification-time">10:15 AM</span>
+            </li>
+            <li class="notification-item">
+              Camera detected movement at front door.
+              <span class="notification-time">10:09 AM</span>
+            </li>
+            <li class="notification-item">
+              Temperature adjusted to 24°C.
+              <span class="notification-time">10:12 AM</span>
+            </li>
+            <li class="notification-item">
+              Lights turned off in the living room.
+              <span class="notification-time">10:15 AM</span>
+            </li>
+            <li class="notification-item">
+              Camera detected movement at front door.
+              <span class="notification-time">10:09 AM</span>
+            </li>
+            <li class="notification-item">
+              Temperature adjusted to 24°C.
+              <span class="notification-time">10:12 AM</span>
+            </li>
+            <li class="notification-item">
+              Lights turned off in the living room.
+              <span class="notification-time">10:15 AM</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const updateTime = () => {
+          const now = new Date();
+          document.getElementById("time").textContent =
+            now.toLocaleTimeString();
+          document.getElementById("date").textContent =
+            now.toLocaleDateString();
+        };
+        setInterval(updateTime, 1000);
+        updateTime();
+        const doorLock = document.getElementById("doorLock");
+        const status = document.getElementById("doorLockStatus");
+        doorLock.addEventListener("click", () => {
+          if (doorLock.textContent === "Locked") {
+            doorLock.textContent = "Unlocked";
+            doorLock.style.backgroundColor = "#43b581";
+            status.textContent = "locked";
+          } else {
+            doorLock.textContent = "Locked";
+            doorLock.style.backgroundColor = "#7289da";
+            status.textContent = "unlocked";
+          }
+        });
+      });
+      const sliderContainer = document.getElementById("brightness-slider");
+      const brightnessLevel = document.getElementById("brightness-level");
+      const sliderFill = sliderContainer.querySelector(".slider-fill");
+      let isDragging = false;
+      function updateBrightness(event) {
+        const rect = sliderContainer.getBoundingClientRect();
+        const offsetX = event.clientX - rect.left;
+        const sliderWidth = sliderContainer.clientWidth;
+        let newPercentage = Math.min(
+          100,
+          Math.max(0, (offsetX / sliderWidth) * 100)
+        );
+        const lightStatus = document.getElementById("lightStatus");
+        adjustBrightness(newPercentage);
+        if (newPercentage === 0) lightStatus.textContent = "off";
+        else lightStatus.textContent = "on";
+        sliderFill.style.width = `${newPercentage}%`;
+        brightnessLevel.textContent = `${Math.round(newPercentage)}%`;
+        const opacityValue = newPercentage / 100;
+        sliderFill.style.opacity = opacityValue;
+      }
+      sliderContainer.addEventListener("mousedown", (event) => {
+        isDragging = true;
+        updateBrightness(event);
+      });
+      document.addEventListener("mousemove", (event) => {
+        if (isDragging) updateBrightness(event);
+      });
+      document.addEventListener("mouseup", () => {
+        isDragging = false;
+      });
+      document.addEventListener("DOMContentLoaded", () => {
+        const weatherDesc = document.getElementById("weatherDesc");
+        const weather = weatherDesc.textContent.trim();
+        let icon = "";
+        if (weather === "Sunny") icon = "☀️";
+        else if (weather === "Cloudy") icon = "☁️";
+        else if (weather === "Rainy") icon = "🌧️";
+        if (icon)
+          weatherDesc.innerHTML += ` <span class="weather-icon">${icon}</span>`;
+      });
+      function adjustBrightness(newBrightness) {
+        // Gửi yêu cầu điều chỉnh độ sáng đến ESP32
+        fetch(`/adjustBrightness/${newBrightness}`)
+          .then((response) => {
+            if (response.ok)
+              console.log(`Brightness adjusted to ${newBrightness}%`);
+            else throw new Error("Failed to adjust brightness");
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+    </script>
+  </body>
+</html>
