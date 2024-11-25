@@ -64,6 +64,26 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ error: "An error occurred during login" });
   }
 });
+//Adding device data to the server
+app.post("/add-sensor-data", async(req,res) =>{
+  const {username, temperature, humidity} = req.body;
+  try{
+    const user = await User.findOne({username});
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    user.sensorData.push({ temperature, humidity });
+    await user.save();
+    res.status(200).json({ message: "Sensor data added successfully" });
+
+  }
+  catch(error){
+    console.error("Error adding sensor data:", error);
+    res.status(500).json({ error: "An error occurred while adding sensor data" });
+  }
+});
+
+//======
 app.get("/index", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
@@ -71,3 +91,5 @@ app.get("/index", (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
  });
+
+ 
