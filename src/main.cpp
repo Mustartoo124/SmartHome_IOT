@@ -1,80 +1,42 @@
-#include "Button/button.h"
-#include "DHT22/dht22.h"
-#include "DS1307 RTC/rtc.h"
-#include "LED/led.h"
-#include "Photoresistor Sensor/photo.h"
-#include "Buzzer/buzzer.h"
-#include "OLED ssd1306/oled.h"
-#include "PIR Motion Sensor/pir.h"  
-#include "Relay/relay.h"  
-#include "Servo/servo.h"
-#include "Slide Potentionmeter/slide.h"
+#include "setup.h"  
 
-void rgbController() {
-  Serial.println("Red");
-  analogWrite(redPin, 255);  
-  analogWrite(greenPin, 0);     
-  analogWrite(bluePin, 0);   
-  Serial.println("Green");  
-  delay(1000);
+// button 
+void pressButton(bool buttonState) {
+    if (buttonState != lastButtonState) {
+        if (buttonState == HIGH) {
+            activeButton = !activeButton;
+        }
+        lastButtonState = buttonState;
+    }
 }
 
-void displayController() {
+// OLED
+void displayController(int hour, int minute, float temperature, float humidity) {
   display.init();
   display.flipScreenVertically();
   display.setFont(ArialMT_Plain_10);
   display.setTextAlignment(TEXT_ALIGN_LEFT);
-  display.drawString(0, 0, "Hello World");
+
+  display.clear();
+
+  char timeBuffer[16];
+  snprintf(timeBuffer, sizeof(timeBuffer), "Time: %02d:%02d", hour, minute);
+  display.drawString(0, 0, timeBuffer);
+
+  char tempBuffer[16];
+  snprintf(tempBuffer, sizeof(tempBuffer), "Temp: %.1f C", temperature);
+  display.drawString(0, 12, tempBuffer);
+
+  char humidityBuffer[16];
+  snprintf(humidityBuffer, sizeof(humidityBuffer), "Humidity: %.1f%%", humidity);
+  display.drawString(0, 24, humidityBuffer);
+
   display.display();
 }
 
-void potentiometerController() {
-  int value = analogRead(slidePin); 
-  Serial.println(value); 
-  delay(100); 
-}
-
-void dhtController() {
-  TempAndHumidity data = dht.getTempAndHumidity();
-
-  if (isnan(data.temperature) || isnan(data.humidity)) {
-    Serial.println("Failed to read from DHT sensor!");
-    return;
-  } 
-
-  Serial.print("Humidity: "); Serial.print(data.humidity); Serial.print("%  ");
-  Serial.print("Temperature: "); Serial.print(data.temperature); Serial.println("°C");
-  delay(2000);
-} 
-
-
-
-void photoController() {
-  Serial.println(analogRead(photoPin));
-  delay(100);
-}
-
-void servoController() {
-  myServo.write(0); 
-  delay(1000); 
-  myServo.write(90); 
-  delay(1000); 
-  myServo.write(180); 
-  delay(1000); 
-  myServo.write(0); 
-  delay(1000); 
-} 
-
-void buzzerController() {
-  tone(buzzerPin, 1000); 
-  delay(1000); 
-  noTone(buzzerPin); 
-  delay(500); 
-}
-
-void buttonController() {
-  int signal = digitalRead(buttonPin); 
-  if (signal == HIGH) Serial.println("Button pressed");
+// relay
+void relayController(bool state) {
+  digitalWrite(relayPin, state);
 } 
 
 void setup() {  
@@ -92,14 +54,60 @@ void setup() {
   pinMode(redPin, OUTPUT);
   pinMode(greenPin, OUTPUT);
   pinMode(bluePin, OUTPUT);
-  displayController();   
 
   // INPUT
   pinMode(buttonPin, INPUT);
   pinMode(photoPin, INPUT); 
   dht.setup(dhtPin, DHTesp::DHT22); 
+  rtc.setTime(12, 0, 0, 1, 1, 2021);
 }
 
 void loop() {
+  pressButton(digitalRead(buttonPin));
+  if (activeButton) {
+    // led on 
+    digitalWrite(ledPin, HIGH);
 
+    // Sensor data
+    temperature = dht.getTemperature(); 
+    humidity = dht.getHumidity(); 
+    pirState = digitalRead(pirPin);
+    photoState = analogRead(photoPin) > 500 ? true : false;
+    slideValue = analogRead(slidePin); 
+    Serial.println(slideValue);
+  
+    // Display data 
+    displayController(rtc.getHour(), rtc.getMinute(), temperature, humidity);
+
+    // adjust servo 
+    servoAngle = map(slideValue, 0, 4095, 0, 180);
+    myServo.write(servoAngle);
+
+    // turn on led when dark    
+    digitalWrite(relayPin, photoState);
+
+    // temp > 70
+    if (temperature > 60) {
+      // led on
+      digitalWrite(relayPin, HIGH); 
+      delay(200); 
+      digitalWrite(relayPin, LOW);
+      delay(200); 
+
+      // buzzer on
+      tone(buzzerPin, 1000); 
+      delay(1000); 
+      noTone(buzzerPin); 
+      delay(500);
+
+      // servo on 
+      myServo.write(0); 
+    }
+
+    // Control from web 
+       // light control 
+       // servo control 
+    
+    // push data to server 
+  } 
 }

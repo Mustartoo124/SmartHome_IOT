@@ -7,6 +7,8 @@
 #include <ESP32Time.h>
 #include <Wire.h>
 #include <SSD1306.h>  
+#include <vector>
+#include <cmath>
 
 #define OLED_ADDRESS 0x3C
 #define SDA_PIN 21
@@ -32,5 +34,14 @@ SSD1306 display(OLED_ADDRESS, SDA_PIN, SCL_PIN);
 
 float temperature = 0.0; 
 float humidity = 0.0; 
+float slideValue = 0.0;
+float servoAngle = 0.0; 
+
+bool photoState = false; // false: dark, true: light
+bool pirState = false; // false: no motion, true: motion
+
+
+bool activeButton = false;
+bool lastButtonState = LOW; 
 
 #endif // SETUP_H
