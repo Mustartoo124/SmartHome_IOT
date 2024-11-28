@@ -23,6 +23,12 @@ const userSchema = new mongoose.Schema({
       measuredAt: { type: Date, default: Date.now },
     },
   ],
+  servoData:[
+    {
+      servoState: Boolean,
+      measuredAt:{type: Date, default: Date.now}
+    }
+  ]
 });
 
 const User = mongoose.model("User", userSchema);
@@ -66,13 +72,14 @@ app.post("/login", async (req, res) => {
 });
 //Adding device data to the server
 app.post("/add-sensor-data", async(req,res) =>{
-  const {username, temperature, humidity} = req.body;
+  const {username, temperature, humidity,servoState} = req.body;
   try{
     const user = await User.findOne({username});
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    user.sensorData.push({ temperature, humidity });
+    user.sensorData.push({ temperature, humidity});
+    user.servoData.push({servoState});
     await user.save();
     res.status(200).json({ message: "Sensor data added successfully" });
 

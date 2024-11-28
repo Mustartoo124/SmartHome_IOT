@@ -38,9 +38,59 @@ void displayController(int hour, int minute, float temperature, float humidity) 
 void relayController(bool state) {
   digitalWrite(relayPin, state);
 } 
+void connectToWiFi(){
+  Serial.println("Connecting to Wifi...");
+  WiFi.begin(ssid, password);
+
+  while(WiFi.status() != WL_CONNECTED){
+    delay(1000);
+    Serial.print(".");
+  }
+  Serial.println("\nConnected to WiFi!");
+
+}
+void pushDataToServer( float temperature, float humidity, int servoAngle){
+  //Checking for Wifi connection
+  if (WiFi.status() == WL_CONNECTED) {
+      //Create http client
+      HTTPClient http;
+
+      http.begin(serverURL);
+
+      //Notify the data as json
+      http.addHeader("Content-Type", "application/json");
+      //Check if servo is on or off
+      bool servoActive = (servoAngle != 0);
+
+      String payload = String("{\"username\":\"test_user\", \"temperature\":") + 
+                         String(temperature) + 
+                         String(", \"humidity\":") + 
+                         String(humidity) + 
+                         String(", \"servoStatus\":") + 
+                         (servoActive ? "lock" : "unlock") + 
+                         String("}");
+
+
+      int httpResponseCode = http.POST(payload);
+
+      if (httpResponseCode > 0) {
+          Serial.println("Data sent successfully:");
+          Serial.println(httpResponseCode);
+          Serial.println(http.getString());
+      } else {
+          Serial.print("Error sending data: ");
+          Serial.println(httpResponseCode);
+      }
+      http.end();
+    } else {
+      Serial.println("WiFi not connected. Data not sent.");
+    }
+}
 
 void setup() {  
   Serial.begin(9600);
+  //Init 
+  connectToWiFi();
 
   // Set up servo 
   myServo.setPeriodHertz(50);
@@ -78,15 +128,15 @@ void loop() {
   
     // Display data 
     displayController(rtc.getHour(), rtc.getMinute(), temperature, humidity);
-
     // adjust servo 
+
     servoAngle = map(slideValue, 0, 4095, 0, 180);
     myServo.write(servoAngle);
 
     // turn on led when dark    
     digitalWrite(relayPin, photoState);
 
-    // temp > 70
+    // temp > 60
     if (temperature > 60) {
       // led on
       digitalWrite(relayPin, HIGH); 
@@ -109,5 +159,7 @@ void loop() {
        // servo control 
     
     // push data to server 
+    pushDataToServer(temperature, humidity, servoAngle);
+
   } 
 }

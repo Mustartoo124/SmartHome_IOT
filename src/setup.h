@@ -10,6 +10,9 @@
 #include <vector>
 #include <cmath>
 
+#include <WiFi.h>
+#include <HTTPClient.h>
+
 #define OLED_ADDRESS 0x3C
 #define SDA_PIN 21
 #define SCL_PIN 22
@@ -44,4 +47,8 @@ bool pirState = false; // false: no motion, true: motion
 bool activeButton = false;
 bool lastButtonState = LOW; 
 
+
+const char* ssid = "myssid";
+const char* password = "mypass";
+const char* serverURL = "http://serverip:3000/add-sensor-data"; // Replace with your server IP or domain
 #endif // SETUP_H
