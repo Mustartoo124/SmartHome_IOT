@@ -136,6 +136,9 @@ void loop() {
     // turn on led when dark    
     digitalWrite(relayPin, photoState);
 
+    // turn on led when motion detected
+    digitalWrite(relayPin, pirState);
+
     // temp > 60
     if (temperature > 60) {
       // led on
