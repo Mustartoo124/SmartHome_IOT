@@ -6,16 +6,26 @@
 #include <DHTesp.h>
 #include <ESP32Time.h>
 #include <Wire.h>
-#include <SSD1306.h>  
+#include <SSD1306.h>
 #include <vector>
 #include <cmath>
+#include <string>
+#include "addons/TokenHelper.h"
+#include "addons/RTDBHelper.h"
 
 #include <WiFi.h>
-#include <HTTPClient.h>
+#include <FireBase_ESP_Client.h>
 
 #define OLED_ADDRESS 0x3C
 #define SDA_PIN 21
 #define SCL_PIN 22
+
+#define WIFI_SSID "Wokwi-GUEST"
+#define WIFI_PASSWORD ""
+
+// Firebase Credentials
+#define FIREBASE_HOST "https://iotfirebase-cbc07-default-rtdb.asia-southeast1.firebasedatabase.app/"
+#define FIREBASE_AUTH "AIzaSyDAGxRZC-StIXj5O75N4wTU7Xr0kNLXUfY"
 
 const int ledPin = 15;
 const int buzzerPin = 2; 
@@ -39,16 +49,21 @@ float temperature = 0.0;
 float humidity = 0.0; 
 float slideValue = 0.0;
 float servoAngle = 0.0; 
-
+float servoFirebase = 0.0;
+unsigned long lastDebounceTime = 0;
+bool led = false;
+int lastMinute = 0;
 bool photoState = false; // false: dark, true: light
 bool pirState = false; // false: no motion, true: motion
-
+std::string currentTime = "01-01-2024 00:00:00";
+std::string firebaseTime = "01-01-2024 00:00:00";
 
 bool activeButton = false;
 bool lastButtonState = LOW; 
 
 
-const char* ssid = "myssid";
-const char* password = "mypass";
-const char* serverURL = "http://serverip:3000/add-sensor-data"; // Replace with your server IP or domain
+// Firebase objects
+FirebaseData fbdo;
+FirebaseAuth auth;
+FirebaseConfig config;
 #endif // SETUP_H

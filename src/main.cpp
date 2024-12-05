@@ -1,17 +1,7 @@
 #include "setup.h"  
 
-// button 
-void pressButton(bool buttonState) {
-    if (buttonState != lastButtonState) {
-        if (buttonState == HIGH) {
-            activeButton = !activeButton;
-        }
-        lastButtonState = buttonState;
-    }
-}
-
 // OLED
-void displayController(int hour, int minute, float temperature, float humidity) {
+void displayController(float temperature, float humidity) {
   display.init();
   display.flipScreenVertically();
   display.setFont(ArialMT_Plain_10);
@@ -20,79 +10,86 @@ void displayController(int hour, int minute, float temperature, float humidity) 
   display.clear();
 
   char timeBuffer[16];
-  snprintf(timeBuffer, sizeof(timeBuffer), "Time: %02d:%02d", hour, minute);
+  snprintf(timeBuffer, sizeof(timeBuffer), "Time: %02d:%02d", rtc.getHour(true), rtc.getMinute());
   display.drawString(0, 0, timeBuffer);
+
+  char dateBuffer[16];
+  snprintf(dateBuffer, sizeof(dateBuffer), "%02d-%02d-%04d", rtc.getDay(), rtc.getMonth(), rtc.getYear());
+  display.drawString(0, 12, dateBuffer);
 
   char tempBuffer[16];
   snprintf(tempBuffer, sizeof(tempBuffer), "Temp: %.1f C", temperature);
-  display.drawString(0, 12, tempBuffer);
+  display.drawString(0, 24, tempBuffer);
 
   char humidityBuffer[16];
   snprintf(humidityBuffer, sizeof(humidityBuffer), "Humidity: %.1f%%", humidity);
-  display.drawString(0, 24, humidityBuffer);
+  display.drawString(0, 36, humidityBuffer);
 
   display.display();
+}
+
+// button 
+void pressButton(bool buttonState) {
+    unsigned long currentTime = millis();
+    if ((currentTime - lastDebounceTime) > 50) {
+        if (buttonState != lastButtonState) {
+            if (buttonState == HIGH) {
+                activeButton = !activeButton;
+                digitalWrite(ledPin, activeButton);
+                temperature = dht.getTemperature(); 
+                humidity = dht.getHumidity(); 
+                displayController(humidity, temperature);
+            }
+            lastDebounceTime = currentTime;
+        }
+    }
+    lastButtonState = buttonState;
+}
+// real time clock
+void setTime(std::string currentTime) {
+  int day, month, year, hour, minute, second;
+  sscanf(currentTime.c_str(), "%2d-%2d-%4d %2d:%2d:%2d", &day, &month, &year, &hour, &minute, &second);
+  Serial.printf("Setting time to: %02d-%02d-%04d %02d:%02d:%02d\n", day, month, year, hour, minute, second);
+  rtc.setTime(second, minute, hour, day, month, year);
 }
 
 // relay
 void relayController(bool state) {
   digitalWrite(relayPin, state);
 } 
+
 void connectToWiFi(){
-  Serial.println("Connecting to Wifi...");
-  WiFi.begin(ssid, password);
+  Serial.print("Wifi...");
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   while(WiFi.status() != WL_CONNECTED){
-    delay(1000);
+    delay(500);
     Serial.print(".");
   }
-  Serial.println("\nConnected to WiFi!");
-
+  Serial.println("connected!");
 }
-void pushDataToServer( float temperature, float humidity, int servoAngle){
-  //Checking for Wifi connection
-  if (WiFi.status() == WL_CONNECTED) {
-      //Create http client
-      HTTPClient http;
 
-      http.begin(serverURL);
+void connectToFirebase(){
+  // Configure Firebase
+  config.api_key = FIREBASE_AUTH;
+  config.database_url = FIREBASE_HOST;
+  if (Firebase.signUp(&config, &auth, "", "")) {
+    Serial.println("Connected to Firebase!");
+  } else {
+    Serial.println("Failed to connect to Firebase!");
+    Serial.println(config.signer.signupError.message.c_str());
+  }
+  // Initialize Firebase
+  Firebase.begin(&config, &auth);
+  Firebase.reconnectWiFi(true);
 
-      //Notify the data as json
-      http.addHeader("Content-Type", "application/json");
-      //Check if servo is on or off
-      bool servoActive = (servoAngle != 0);
-
-      String payload = String("{\"username\":\"test_user\", \"temperature\":") + 
-                         String(temperature) + 
-                         String(", \"humidity\":") + 
-                         String(humidity) + 
-                         String(", \"servoStatus\":") + 
-                         (servoActive ? "lock" : "unlock") + 
-                         String("}");
-
-
-      int httpResponseCode = http.POST(payload);
-
-      if (httpResponseCode > 0) {
-          Serial.println("Data sent successfully:");
-          Serial.println(httpResponseCode);
-          Serial.println(http.getString());
-      } else {
-          Serial.print("Error sending data: ");
-          Serial.println(httpResponseCode);
-      }
-      http.end();
-    } else {
-      Serial.println("WiFi not connected. Data not sent.");
-    }
 }
 
 void setup() {  
   Serial.begin(9600);
-  //Init 
   connectToWiFi();
+  connectToFirebase();
 
-  // Set up servo 
   myServo.setPeriodHertz(50);
   myServo.attach(servoPin, 500, 2400); 
   myServo.attach(16); 
@@ -109,35 +106,51 @@ void setup() {
   pinMode(buttonPin, INPUT);
   pinMode(photoPin, INPUT); 
   dht.setup(dhtPin, DHTesp::DHT22); 
-  rtc.setTime(12, 0, 0, 1, 1, 2021);
+  setTime(currentTime);
 }
 
 void loop() {
   pressButton(digitalRead(buttonPin));
   if (activeButton) {
-    // led on 
-    digitalWrite(ledPin, HIGH);
-
+    if (Firebase.ready()){
+      Firebase.RTDB.getFloat(&fbdo, "/servo",  &servoFirebase);
+      Firebase.RTDB.getString(&fbdo, "/time",  &firebaseTime);
+      if (firebaseTime != currentTime) {
+        currentTime = firebaseTime;
+        setTime(currentTime);
+        displayController(humidity, temperature);
+      }
+        if (servoFirebase != servoAngle) {
+          servoAngle = servoFirebase;
+          myServo.write(servoAngle);
+    }
+    
+      if (Firebase.RTDB.getBool(&fbdo, "/light",  &led)){
+        digitalWrite(relayPin, led);
+      }
+    }
     // Sensor data
-    temperature = dht.getTemperature(); 
-    humidity = dht.getHumidity(); 
     pirState = digitalRead(pirPin);
     photoState = analogRead(photoPin) > 500 ? true : false;
-    slideValue = analogRead(slidePin); 
-    Serial.println(slideValue);
-  
     // Display data 
-    displayController(rtc.getHour(), rtc.getMinute(), temperature, humidity);
     // adjust servo 
+    if (analogRead(slidePin) != slideValue) {
+      slideValue = analogRead(slidePin);
+      servoAngle = map(slideValue, 0, 4095, 0, 180);
+      myServo.write(servoAngle);
+      servoFirebase = servoAngle;
+          if (Firebase.ready()){
+        Firebase.RTDB.setFloat(&fbdo, "/servo", servoFirebase);
+    }
+    }
 
-    servoAngle = map(slideValue, 0, 4095, 0, 180);
-    myServo.write(servoAngle);
+    if (led == false) {
+      // turn on led when dark    
+      digitalWrite(relayPin, photoState);
 
-    // turn on led when dark    
-    digitalWrite(relayPin, photoState);
-
-    // turn on led when motion detected
-    digitalWrite(relayPin, pirState);
+      // turn on led when motion detected
+      digitalWrite(relayPin, pirState);
+    }
 
     // temp > 60
     if (temperature > 60) {
@@ -152,17 +165,22 @@ void loop() {
       delay(1000); 
       noTone(buzzerPin); 
       delay(500);
-
       // servo on 
       myServo.write(0); 
     }
-
-    // Control from web 
-       // light control 
-       // servo control 
-    
-    // push data to server 
-    pushDataToServer(temperature, humidity, servoAngle);
-
-  } 
+    if (rtc.getMinute() != lastMinute || dht.getHumidity() != humidity || dht.getTemperature() != temperature) {
+      humidity = dht.getHumidity();
+      temperature = dht.getTemperature();
+      lastMinute = rtc.getMinute();
+      displayController(temperature, humidity);
+      if (Firebase.ready()){
+        Firebase.RTDB.setFloat(&fbdo, "/temp", temperature);
+        Firebase.RTDB.setFloat(&fbdo, "/humid", humidity);
+      }
+    }
+  }
+  else {
+    display.init();
+    display.clear();
+  }
 }
