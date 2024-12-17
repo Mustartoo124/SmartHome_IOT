@@ -128,41 +128,44 @@ const updateData = async () => {
 
     // Get today's date in "dd/mm/yyyy" format
     const today = new Date();
-    const day = String(today.getDate()).padStart(2, "0"); // Format day as 2 digits
-    const month = String(today.getMonth() + 1).padStart(2, "0"); // Format month as 2 digits
-    const year = today.getFullYear();
-    const dateString = `${day}-${month}-${year}`;
+    const minute = today.getMinutes();
+    if (minute % 30 == 0) {
+      const day = String(today.getDate()).padStart(2, "0"); // Format day as 2 digits
+      const month = String(today.getMonth() + 1).padStart(2, "0"); // Format month as 2 digits
+      const year = today.getFullYear();
+      const dateString = `${day}-${month}-${year}`;
 
-    // Reference to the document for today's date in "sensor_logs"
-    const docRef = firestore.collection("sensor_logs").doc(dateString);
+      // Reference to the document for today's date in "sensor_logs"
+      const docRef = firestore.collection("sensor_logs").doc(dateString);
 
-    // Fetch the document for today
-    const docSnapshot = await docRef.get();
+      // Fetch the document for today
+      const docSnapshot = await docRef.get();
 
-    // If the document doesn't exist, create it with initial data
-    if (!docSnapshot.exists) {
-      await docRef.set({
-        humidities: [humid],
-        temperatures: [temp],
-      });
-      console.log(
-        `Created Firestore document for ${dateString} with initial data.`
-      );
-    } else {
-      // If the document exists, update the arrays
-      const existingData = docSnapshot.data();
-      const firestoreHumidities = existingData.humidities || [];
-      const firestoreTemperatures = existingData.temperatures || [];
+      // If the document doesn't exist, create it with initial data
+      if (!docSnapshot.exists) {
+        await docRef.set({
+          humidities: [humid],
+          temperatures: [temp],
+        });
+        console.log(
+          `Created Firestore document for ${dateString} with initial data.`
+        );
+      } else {
+        // If the document exists, update the arrays
+        const existingData = docSnapshot.data();
+        const firestoreHumidities = existingData.humidities || [];
+        const firestoreTemperatures = existingData.temperatures || [];
 
-      // Append new data to the existing arrays
-      const updatedFirestoreHumidities = [...firestoreHumidities, humid];
-      const updatedFirestoreTemperatures = [...firestoreTemperatures, temp];
+        // Append new data to the existing arrays
+        const updatedFirestoreHumidities = [...firestoreHumidities, humid];
+        const updatedFirestoreTemperatures = [...firestoreTemperatures, temp];
 
-      await docRef.update({
-        humidities: updatedFirestoreHumidities,
-        temperatures: updatedFirestoreTemperatures,
-      });
-      console.log(`Updated Firestore document for ${dateString}.`);
+        await docRef.update({
+          humidities: updatedFirestoreHumidities,
+          temperatures: updatedFirestoreTemperatures,
+        });
+        console.log(`Updated Firestore document for ${dateString}.`);
+      }
     }
   } catch (error) {
     console.error("Error updating data:", error);
@@ -197,10 +200,8 @@ const monitorServoStatus = async () => {
 };
 
 const startDataCollection = () => {
-  const executeTask = () => {
-    updateData();
-  };
-  setInterval(executeTask, 30 * 60 * 1000);
+  const executeTask = () => updateData();
+  setInterval(executeTask, 60 * 1000);
 };
 
 const sendEmail = async () => {
@@ -326,7 +327,8 @@ server.get("/sensor", async (req, res) => {
       };
       res.status(200).json(response);
     } else {
-      res.status(404).json({ error: "No data found for today." });
+      const response = { humidities: [], temperatures: [] };
+      res.status(200).json({ response });
     }
   } catch (error) {
     console.error("Error fetching data:", error);
