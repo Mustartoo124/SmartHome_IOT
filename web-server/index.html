@@ -284,21 +284,65 @@ fetchData();
     const sendButton = document.getElementById('send-button');
     const inputField = document.getElementById('chatbot-input');
     const messagesList = document.getElementById('chatbot-messages');
-    sendButton.addEventListener('click', () => {
-      const userInput = inputField.value.trim();
+    
+    // Xử lý sự kiện khi người dùng nhấn nút "Send"
+    sendButton.addEventListener('click', async () => {
+      const userInput = inputField.value.trim(); // Lấy input từ người dùng
       if (userInput) {
+        // Hiển thị tin nhắn người dùng
         const userMessage = document.createElement('li');
         userMessage.className = 'user-message';
         userMessage.textContent = userInput;
         messagesList.appendChild(userMessage);
-
+    
         const botMessage = document.createElement('li');
         botMessage.className = 'bot-message';
-        botMessage.textContent = "I'm a chatbot, how can I help you?";
+    
+        // Xử lý câu hỏi liên quan đến nhiệt độ, độ ẩm, đèn, và khí gas
+        if (/temperature/i.test(userInput)) {
+          const currentTemperature = temperatureElement.textContent;
+          botMessage.textContent = `The current temperature is ${currentTemperature}°C.`;
+        } else if (/humidity/i.test(userInput)) {
+          const currentHumidity = humidityElement.textContent;
+          botMessage.textContent = `The current humidity is ${currentHumidity}%.`;
+        } else if (/light status/i.test(userInput)) {
+          const lightState = status.textContent;
+          botMessage.textContent = `The light is currently ${lightState}.`;
+        } else if (/gas level/i.test(userInput)) {
+          const currentGasLevel = gasLevel.textContent;
+          botMessage.textContent = `The current gas level is ${currentGasLevel}.`;
+        } else if (/gas status/i.test(userInput)) {
+          const currentGasStatus = gasStatus.textContent;
+          botMessage.textContent = `The gas status is currently ${currentGasStatus}.`;
+        } else {
+          // Gửi câu hỏi không liên quan đến các thông số trên đến Flask API
+          try {
+            const response = await fetch('http://127.0.0.1:5000/analyze', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ question: userInput }), // Gửi câu hỏi
+            });
+    
+            const result = await response.json(); // Nhận phản hồi từ API
+            if (result.intent) {
+              botMessage.textContent = `Intent detected: ${result.intent}, Confidence: ${result.confidence}`;
+            } else if (result.response) {
+              botMessage.textContent = result.response;
+            } else {
+              botMessage.textContent = "I'm sorry, I didn't understand your question.";
+            }
+          } catch (error) {
+            console.error("Error:", error);
+            botMessage.textContent = "There was an error connecting to the server.";
+          }
+        }
+    
         messagesList.appendChild(botMessage);
-
+    
+        // Xóa input và cuộn xuống cuối danh sách
         inputField.value = '';
-
         const chatbotContent = document.querySelector('.chatbot-content');
         chatbotContent.scrollTop = chatbotContent.scrollHeight;
       }
