@@ -68,8 +68,10 @@ SMARTHOME_IOT/
 2. Install the **PlatformIO** extension.
 3. Connect the ESP32 via USB.
 4. Update **WIFI_SSID** and **WIFI_PASSWORD** in `setup.h`.
-5. Upload the code:
+5. Open terminal and run:
 ```bash
+
+## Run the ESP simulator using pio
 pio run --target upload 
 
 ### Dependencies for chatbot server
@@ -79,10 +81,8 @@ pip install -r requirements.txt
 ollama pull llama3
 uvicorn chat_api:app --reload --port 5000
 
-### Web server 
+### Activate Web server 
 cd web-server
 npm install
 npm start
 
-Open your browser at:
-http://localhost:3000 (or the configured port).
