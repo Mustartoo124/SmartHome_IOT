@@ -42,7 +42,7 @@
 
 ## 🔧 Setup Instructions
 
-### 1. ESP32 Firmware
+### ESP32 Firmware
 1. Open the project in **VSCode**.
 2. Install the **PlatformIO** extension.
 3. Connect the ESP32 via USB.
