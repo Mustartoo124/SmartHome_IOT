@@ -19,27 +19,6 @@
 
 ---
 
-## 📂 Project Structure
-SMARTHOME_IOT/
-│
-├── chat-server/ # AI Chatbot server
-│ └── chat_api.py # Chatbot API (FastAPI + Ollama + LangChain)
-│
-├── src/ # ESP32 firmware
-│ ├── main.cpp
-│ └── setup.h
-│
-├── web-server/ # Web dashboard
-│ ├── index.html
-│ ├── index.js
-│ ├── login.html
-│ └── style.css
-│
-├── package.json # Node.js dependencies
-├── platformio.ini # PlatformIO configuration for ESP32
-├── requirements.txt # Python dependencies for chatbot
-└── README.md
-
 ## ⚙ Hardware Requirements
 - **ESP32**
 - **DHT22** temperature & humidity sensor
